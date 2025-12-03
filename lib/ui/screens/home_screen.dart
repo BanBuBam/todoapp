@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart'; // Import Provider
 
 import '../../todo_model.dart';
 import '../../utils/helpers.dart';
+import '../../providers/todo_provider.dart'; // Import Provider Class
 import '../widgets/todo_card.dart';
 import 'calendar_screen.dart';
 
@@ -15,57 +16,25 @@ class TodoListPage extends StatefulWidget {
 }
 
 class _TodoListPageState extends State<TodoListPage> {
-  late Box<TodoItem> _todoBox;
+  // Không cần khai báo Box hay biến filter ở đây nữa vì đã có trong Provider
+  // Chỉ giữ lại Controller cho các TextField UI
   final TextEditingController _textFieldController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
-
-  TodoCategory? _selectedCategoryFilter;
-  String _searchText = "";
 
   @override
   void initState() {
     super.initState();
-    _todoBox = Hive.box<TodoItem>('todoBox');
+    // Lắng nghe ô tìm kiếm để gọi hàm updateSearchText trong Provider
     _searchController.addListener(() {
-      setState(() {
-        _searchText = _searchController.text.toLowerCase();
-      });
+      context.read<TodoProvider>().updateSearchText(_searchController.text);
     });
   }
 
-  List<TodoItem> _getFilteredTodos() {
-    final allTodos = _todoBox.values.toList();
-    final filtered = allTodos.where((item) {
-      bool matchesSearch = item.title.toLowerCase().contains(_searchText);
-      bool matchesCategory =
-          _selectedCategoryFilter == null ||
-          item.category == _selectedCategoryFilter;
-      return matchesSearch && matchesCategory;
-    }).toList();
-    filtered.sort((a, b) {
-      int dateComparison = a.date.compareTo(b.date);
-      if (dateComparison != 0) return dateComparison;
-      return b.priority.index.compareTo(a.priority.index);
-    });
-    return filtered;
-  }
-
-  void _addTodoItem(
-    String title,
-    DateTime pickedDate,
-    Priority pickedPriority,
-    TodoCategory pickedCategory,
-  ) {
-    if (title.isNotEmpty) {
-      final newItem = TodoItem(
-        id: DateTime.now().toString(),
-        title: title,
-        date: pickedDate,
-        priority: pickedPriority,
-        category: pickedCategory,
-      );
-      _todoBox.add(newItem);
-    }
+  @override
+  void dispose() {
+    _textFieldController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _displayAddDialog(BuildContext context) {
@@ -87,10 +56,7 @@ class _TodoListPageState extends State<TodoListPage> {
                   children: [
                     TextField(
                       controller: _textFieldController,
-                      decoration: const InputDecoration(
-                        labelText: "Nội dung",
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: const InputDecoration(labelText: "Nội dung", border: OutlineInputBorder()),
                       autofocus: true,
                     ),
                     const SizedBox(height: 16),
@@ -105,14 +71,11 @@ class _TodoListPageState extends State<TodoListPage> {
                             final DateTime? picked = await showDatePicker(
                               context: context,
                               initialDate: selectedDate,
-                              firstDate: DateTime.now().subtract(
-                                const Duration(days: 365),
-                              ),
+                              firstDate: DateTime.now().subtract(const Duration(days: 365)),
                               lastDate: DateTime(2100),
                               locale: const Locale('vi', 'VN'),
                             );
-                            if (picked != null)
-                              setStateDialog(() => selectedDate = picked);
+                            if (picked != null) setStateDialog(() => selectedDate = picked);
                           },
                           child: const Text('Đổi'),
                         ),
@@ -127,16 +90,8 @@ class _TodoListPageState extends State<TodoListPage> {
                         const Spacer(),
                         DropdownButton<Priority>(
                           value: selectedPriority,
-                          onChanged: (val) =>
-                              setStateDialog(() => selectedPriority = val!),
-                          items: Priority.values
-                              .map(
-                                (p) => DropdownMenuItem(
-                                  value: p,
-                                  child: Text(getPriorityText(p)),
-                                ),
-                              )
-                              .toList(),
+                          onChanged: (val) => setStateDialog(() => selectedPriority = val!),
+                          items: Priority.values.map((p) => DropdownMenuItem(value: p, child: Text(getPriorityText(p)))).toList(),
                         ),
                       ],
                     ),
@@ -149,26 +104,11 @@ class _TodoListPageState extends State<TodoListPage> {
                         const Spacer(),
                         DropdownButton<TodoCategory>(
                           value: selectedCategory,
-                          onChanged: (val) =>
-                              setStateDialog(() => selectedCategory = val!),
-                          items: TodoCategory.values
-                              .map(
-                                (c) => DropdownMenuItem(
-                                  value: c,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        categoryInfo[c]['icon'],
-                                        size: 16,
-                                        color: categoryInfo[c]['color'],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(categoryInfo[c]['name']),
-                                    ],
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          onChanged: (val) => setStateDialog(() => selectedCategory = val!),
+                          items: TodoCategory.values.map((c) => DropdownMenuItem(
+                            value: c,
+                            child: Row(children: [Icon(categoryInfo[c]['icon'], size: 16, color: categoryInfo[c]['color']), const SizedBox(width: 8), Text(categoryInfo[c]['name'])]),
+                          )).toList(),
                         ),
                       ],
                     ),
@@ -176,19 +116,19 @@ class _TodoListPageState extends State<TodoListPage> {
                 ),
               ),
               actions: [
-                TextButton(
-                  child: const Text('Hủy'),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                TextButton(child: const Text('Hủy'), onPressed: () => Navigator.pop(context)),
                 ElevatedButton(
                   child: const Text('Lưu'),
                   onPressed: () {
-                    _addTodoItem(
-                      _textFieldController.text,
-                      selectedDate,
-                      selectedPriority,
-                      selectedCategory,
-                    );
+                    if (_textFieldController.text.isNotEmpty) {
+                      // GỌI PROVIDER ĐỂ THÊM CÔNG VIỆC
+                      context.read<TodoProvider>().addTodo(
+                          _textFieldController.text,
+                          selectedDate,
+                          selectedPriority,
+                          selectedCategory
+                      );
+                    }
                     Navigator.pop(context);
                   },
                 ),
@@ -204,19 +144,13 @@ class _TodoListPageState extends State<TodoListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Todo App',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Hive Todo App', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month, color: Colors.white),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CalendarPage()),
-            ),
-          ),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarPage())),
+          )
         ],
       ),
       body: Column(
@@ -234,63 +168,53 @@ class _TodoListPageState extends State<TodoListPage> {
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Tất cả'),
-                        selected: _selectedCategoryFilter == null,
-                        onSelected: (bool selected) =>
-                            setState(() => _selectedCategoryFilter = null),
-                      ),
-                      const SizedBox(width: 8),
-                      ...TodoCategory.values.map(
-                        (category) => Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: ChoiceChip(
-                            avatar: Icon(
-                              categoryInfo[category]['icon'],
-                              size: 18,
-                              color: _selectedCategoryFilter == category
-                                  ? Colors.white
-                                  : categoryInfo[category]['color'],
+
+                // Dùng Consumer để rebuild phần Filter Chip khi categoryFilter thay đổi
+                Consumer<TodoProvider>(
+                    builder: (context, provider, child) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Tất cả'),
+                              selected: provider.categoryFilter == null,
+                              onSelected: (bool selected) {
+                                provider.updateCategoryFilter(null);
+                              },
                             ),
-                            label: Text(categoryInfo[category]['name']),
-                            selected: _selectedCategoryFilter == category,
-                            selectedColor: Colors.teal.shade700,
-                            labelStyle: TextStyle(
-                              color: _selectedCategoryFilter == category
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
-                            onSelected: (bool selected) => setState(
-                              () => _selectedCategoryFilter = selected
-                                  ? category
-                                  : null,
-                            ),
-                          ),
+                            const SizedBox(width: 8),
+                            ...TodoCategory.values.map((category) => Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ChoiceChip(
+                                avatar: Icon(categoryInfo[category]['icon'], size: 18, color: provider.categoryFilter == category ? Colors.white : categoryInfo[category]['color']),
+                                label: Text(categoryInfo[category]['name']),
+                                selected: provider.categoryFilter == category,
+                                selectedColor: Colors.teal.shade700,
+                                labelStyle: TextStyle(color: provider.categoryFilter == category ? Colors.white : Colors.black),
+                                onSelected: (bool selected) {
+                                  provider.updateCategoryFilter(selected ? category : null);
+                                },
+                              ),
+                            )),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
+                      );
+                    }
                 ),
               ],
             ),
           ),
 
+          // Danh sách công việc
           Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: _todoBox.listenable(),
-              builder: (context, Box<TodoItem> box, _) {
-                final displayTodos = _getFilteredTodos();
+            child: Consumer<TodoProvider>(
+              builder: (context, provider, child) {
+                final displayTodos = provider.filteredTodos; // Lấy list đã lọc từ Provider
 
                 if (displayTodos.isEmpty) {
                   return const Center(child: Text("Không có công việc nào!"));
@@ -303,13 +227,8 @@ class _TodoListPageState extends State<TodoListPage> {
                     final todo = displayTodos[index];
                     return TodoCard(
                       todo: todo,
-                      onToggle: () {
-                        todo.isDone = !todo.isDone;
-                        todo.save();
-                      },
-                      onDelete: () {
-                        todo.delete();
-                      },
+                      onToggle: () => provider.toggleTodoStatus(todo),
+                      onDelete: () => provider.deleteTodo(todo),
                     );
                   },
                 );
