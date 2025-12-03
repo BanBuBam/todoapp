@@ -33,17 +33,13 @@ class _TodoListPageState extends State<TodoListPage> {
     });
   }
 
-  // ... (Giữ nguyên các hàm _getFilteredTodos, _addTodoItem, _displayAddDialog)
-  // Lưu ý: Copy toàn bộ nội dung còn lại của TodoListPage từ file cũ sang đây
-
-  // Khi copy, hãy đảm bảo bạn dùng các biến từ file helpers.dart (categoryInfo, getPriorityText...)
-
-  // Dưới đây là phần _addTodoItem và _displayAddDialog mẫu để bạn dễ hình dung:
   List<TodoItem> _getFilteredTodos() {
     final allTodos = _todoBox.values.toList();
     final filtered = allTodos.where((item) {
       bool matchesSearch = item.title.toLowerCase().contains(_searchText);
-      bool matchesCategory = _selectedCategoryFilter == null || item.category == _selectedCategoryFilter;
+      bool matchesCategory =
+          _selectedCategoryFilter == null ||
+          item.category == _selectedCategoryFilter;
       return matchesSearch && matchesCategory;
     }).toList();
     filtered.sort((a, b) {
@@ -54,7 +50,12 @@ class _TodoListPageState extends State<TodoListPage> {
     return filtered;
   }
 
-  void _addTodoItem(String title, DateTime pickedDate, Priority pickedPriority, TodoCategory pickedCategory) {
+  void _addTodoItem(
+    String title,
+    DateTime pickedDate,
+    Priority pickedPriority,
+    TodoCategory pickedCategory,
+  ) {
     if (title.isNotEmpty) {
       final newItem = TodoItem(
         id: DateTime.now().toString(),
@@ -68,8 +69,6 @@ class _TodoListPageState extends State<TodoListPage> {
   }
 
   void _displayAddDialog(BuildContext context) {
-    // ... Copy nội dung hàm này từ main.dart cũ ...
-    // Code tương tự file main.dart gốc, không cần sửa logic
     DateTime selectedDate = DateTime.now();
     Priority selectedPriority = Priority.medium;
     TodoCategory selectedCategory = TodoCategory.work;
@@ -88,7 +87,10 @@ class _TodoListPageState extends State<TodoListPage> {
                   children: [
                     TextField(
                       controller: _textFieldController,
-                      decoration: const InputDecoration(labelText: "Nội dung", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "Nội dung",
+                        border: OutlineInputBorder(),
+                      ),
                       autofocus: true,
                     ),
                     const SizedBox(height: 16),
@@ -103,11 +105,14 @@ class _TodoListPageState extends State<TodoListPage> {
                             final DateTime? picked = await showDatePicker(
                               context: context,
                               initialDate: selectedDate,
-                              firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                              firstDate: DateTime.now().subtract(
+                                const Duration(days: 365),
+                              ),
                               lastDate: DateTime(2100),
                               locale: const Locale('vi', 'VN'),
                             );
-                            if (picked != null) setStateDialog(() => selectedDate = picked);
+                            if (picked != null)
+                              setStateDialog(() => selectedDate = picked);
                           },
                           child: const Text('Đổi'),
                         ),
@@ -122,8 +127,16 @@ class _TodoListPageState extends State<TodoListPage> {
                         const Spacer(),
                         DropdownButton<Priority>(
                           value: selectedPriority,
-                          onChanged: (val) => setStateDialog(() => selectedPriority = val!),
-                          items: Priority.values.map((p) => DropdownMenuItem(value: p, child: Text(getPriorityText(p)))).toList(),
+                          onChanged: (val) =>
+                              setStateDialog(() => selectedPriority = val!),
+                          items: Priority.values
+                              .map(
+                                (p) => DropdownMenuItem(
+                                  value: p,
+                                  child: Text(getPriorityText(p)),
+                                ),
+                              )
+                              .toList(),
                         ),
                       ],
                     ),
@@ -136,11 +149,26 @@ class _TodoListPageState extends State<TodoListPage> {
                         const Spacer(),
                         DropdownButton<TodoCategory>(
                           value: selectedCategory,
-                          onChanged: (val) => setStateDialog(() => selectedCategory = val!),
-                          items: TodoCategory.values.map((c) => DropdownMenuItem(
-                            value: c,
-                            child: Row(children: [Icon(categoryInfo[c]['icon'], size: 16, color: categoryInfo[c]['color']), const SizedBox(width: 8), Text(categoryInfo[c]['name'])]),
-                          )).toList(),
+                          onChanged: (val) =>
+                              setStateDialog(() => selectedCategory = val!),
+                          items: TodoCategory.values
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        categoryInfo[c]['icon'],
+                                        size: 16,
+                                        color: categoryInfo[c]['color'],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(categoryInfo[c]['name']),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
                         ),
                       ],
                     ),
@@ -148,11 +176,19 @@ class _TodoListPageState extends State<TodoListPage> {
                 ),
               ),
               actions: [
-                TextButton(child: const Text('Hủy'), onPressed: () => Navigator.pop(context)),
+                TextButton(
+                  child: const Text('Hủy'),
+                  onPressed: () => Navigator.pop(context),
+                ),
                 ElevatedButton(
                   child: const Text('Lưu'),
                   onPressed: () {
-                    _addTodoItem(_textFieldController.text, selectedDate, selectedPriority, selectedCategory);
+                    _addTodoItem(
+                      _textFieldController.text,
+                      selectedDate,
+                      selectedPriority,
+                      selectedCategory,
+                    );
                     Navigator.pop(context);
                   },
                 ),
@@ -168,13 +204,19 @@ class _TodoListPageState extends State<TodoListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hive Todo App', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Todo App',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month, color: Colors.white),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarPage())),
-          )
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CalendarPage()),
+            ),
+          ),
         ],
       ),
       body: Column(
@@ -192,7 +234,10 @@ class _TodoListPageState extends State<TodoListPage> {
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -203,20 +248,37 @@ class _TodoListPageState extends State<TodoListPage> {
                       ChoiceChip(
                         label: const Text('Tất cả'),
                         selected: _selectedCategoryFilter == null,
-                        onSelected: (bool selected) => setState(() => _selectedCategoryFilter = null),
+                        onSelected: (bool selected) =>
+                            setState(() => _selectedCategoryFilter = null),
                       ),
                       const SizedBox(width: 8),
-                      ...TodoCategory.values.map((category) => Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ChoiceChip(
-                          avatar: Icon(categoryInfo[category]['icon'], size: 18, color: _selectedCategoryFilter == category ? Colors.white : categoryInfo[category]['color']),
-                          label: Text(categoryInfo[category]['name']),
-                          selected: _selectedCategoryFilter == category,
-                          selectedColor: Colors.teal.shade700,
-                          labelStyle: TextStyle(color: _selectedCategoryFilter == category ? Colors.white : Colors.black),
-                          onSelected: (bool selected) => setState(() => _selectedCategoryFilter = selected ? category : null),
+                      ...TodoCategory.values.map(
+                        (category) => Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            avatar: Icon(
+                              categoryInfo[category]['icon'],
+                              size: 18,
+                              color: _selectedCategoryFilter == category
+                                  ? Colors.white
+                                  : categoryInfo[category]['color'],
+                            ),
+                            label: Text(categoryInfo[category]['name']),
+                            selected: _selectedCategoryFilter == category,
+                            selectedColor: Colors.teal.shade700,
+                            labelStyle: TextStyle(
+                              color: _selectedCategoryFilter == category
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
+                            onSelected: (bool selected) => setState(
+                              () => _selectedCategoryFilter = selected
+                                  ? category
+                                  : null,
+                            ),
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ),
                 ),

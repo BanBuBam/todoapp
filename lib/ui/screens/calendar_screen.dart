@@ -4,7 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../todo_model.dart';
 import '../../utils/helpers.dart';
-import '../widgets/todo_card.dart'; // Import TodoCard để dùng lại
+import '../widgets/todo_card.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -51,11 +51,23 @@ class _CalendarPageState extends State<CalendarPage> {
                 eventLoader: _getEventsForDay,
                 startingDayOfWeek: StartingDayOfWeek.monday,
                 calendarStyle: const CalendarStyle(
-                  markerDecoration: BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-                  todayDecoration: BoxDecoration(color: Colors.orangeAccent, shape: BoxShape.circle),
-                  selectedDecoration: BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
+                  markerDecoration: BoxDecoration(
+                    color: Colors.teal,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.orangeAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.teal,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                headerStyle: const HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                ),
                 onDaySelected: (selectedDay, focusedDay) {
                   if (!isSameDate(_selectedDay!, selectedDay)) {
                     setState(() {

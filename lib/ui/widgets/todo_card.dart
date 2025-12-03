@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../todo_model.dart';
-import '../../utils/helpers.dart'; // Import helpers vừa tạo
+import '../../utils/helpers.dart';
 
 class TodoCard extends StatelessWidget {
   final TodoItem todo;
@@ -12,7 +12,7 @@ class TodoCard extends StatelessWidget {
     super.key,
     required this.todo,
     required this.onToggle,
-    required this.onDelete
+    required this.onDelete,
   });
 
   @override
@@ -22,7 +22,10 @@ class TodoCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       elevation: 2,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: getPriorityColor(todo.priority).withOpacity(0.5), width: 1),
+        side: BorderSide(
+          color: getPriorityColor(todo.priority).withAlpha(120),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
@@ -49,7 +52,10 @@ class TodoCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: catInfo['color'].withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -59,21 +65,31 @@ class TodoCard extends StatelessWidget {
                     children: [
                       Icon(catInfo['icon'], size: 12, color: catInfo['color']),
                       const SizedBox(width: 4),
-                      Text(catInfo['name'], style: TextStyle(fontSize: 11, color: catInfo['color'], fontWeight: FontWeight.bold)),
+                      Text(
+                        catInfo['name'],
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: catInfo['color'],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 Icon(Icons.calendar_month, size: 12, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text(DateFormat('dd/MM/yyyy').format(todo.date), style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                Text(
+                  DateFormat('dd/MM/yyyy').format(todo.date),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                ),
               ],
             ),
           ],
         ),
         trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            onPressed: onDelete
+          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+          onPressed: onDelete,
         ),
       ),
     );
